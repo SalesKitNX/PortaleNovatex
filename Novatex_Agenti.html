@@ -2016,7 +2016,6 @@ html.dev-tablet .zupd,html.dev-desktop .zupd{align-items:center}
       <button class="cback" data-back="home"><svg class="i"><use href="#i-left"/></svg>Indietro</button>
       <h1 class="ptitle" id="t-notif" style="margin-top:10px">Notifiche</h1>
       <p class="lead">Aggiornamenti della tua zona e comunicazioni di Novatex.</p>
-      <div class="card nperm" id="nPerm"></div>
       <div class="nlist" id="nList"></div>
     </section>
 
@@ -2025,7 +2024,7 @@ html.dev-tablet .zupd,html.dev-desktop .zupd{align-items:center}
       <div class="zempty" id="zEmpty">
         <div class="bigic" style="background:var(--teal-50);color:var(--teal)"><svg class="i"><use href="#i-map"/></svg></div>
         <h3>La tua zona arriva da Novatex</h3>
-        <p class="muted">Quando Novatex ti invia i dati della tua zona li trovi qui, in automatico, e ricevi una notifica. Non devi fare nulla.</p>
+        <p class="muted">Quando Novatex ti invia i dati della tua zona li trovi qui, in automatico, con un avviso sulla campanella. Non devi fare nulla.</p>
         <button class="btn primary" id="zCheck"><svg class="i"><use href="#i-refresh"/></svg>Controlla ora</button>
       </div>
       <div id="zWrap" hidden>
@@ -2992,7 +2991,7 @@ Object.assign(window.NVX_I18N_EN,{
 "Su questo dispositivo gli avvisi di sistema non sono disponibili. Su iPhone servono iOS 16.4 o successivo e l’app aggiunta alla schermata Home.":"System alerts aren’t available on this device. On iPhone you need iOS 16.4 or later and the app added to the Home Screen.",
 "Nessuna notifica per ora. Qui trovi gli aggiornamenti della tua zona e le comunicazioni di Novatex.":"No notifications yet. Updates to your territory and messages from Novatex will appear here.",
 "Dati della tua zona":"Your territory data","In attesa dei dati da Novatex":"Waiting for data from Novatex","Controlla ora":"Check now",
-"Quando Novatex ti invia i dati della tua zona li trovi qui, in automatico, e ricevi una notifica. Non devi fare nulla.":"When Novatex sends your territory data it appears here automatically and you get a notification. There’s nothing to do.",
+"Quando Novatex ti invia i dati della tua zona li trovi qui, in automatico, con un avviso sulla campanella. Non devi fare nulla.":"When Novatex sends your zone data you find it here automatically, with an alert on the bell. Nothing to do.",
 "Il resoconto si costruisce dai dati di vendita della tua zona: appena Novatex te li invia compare qui, in automatico.":"The report is built from your territory’s sales data: as soon as Novatex sends it, it appears here automatically.",
 "La tua zona è già aggiornata":"Your territory is already up to date","Nessun dato di zona da Novatex, per ora":"No territory data from Novatex yet","Collegati a internet per controllare":"Go online to check",
 "Aggiornamento zona non applicato: Novatex è stata avvisata":"Territory update not applied: Novatex has been notified",
@@ -5275,8 +5274,10 @@ function renderNotif(){
 onShowHooks.notifiche=function(){ notifRefresh(); renderNotif(); };
 $('bellBtn').onclick=function(){ showSection('notifiche'); };
 /* avvisi di sistema sul telefono (Notification API + service worker) */
+/* 16/10/2026: opzione «Attiva gli avvisi» tolta finché non ci sono avvisi ad app chiusa (servono FCM + piano Blaze, o le email):
+   restano la campanella con il numero e il banner delle comunicazioni */
 function permUi(){
-  var box=$('nPerm'), ok='Notification' in window;
+  var box=$('nPerm'), ok='Notification' in window; if(!box) return;
   var st=ok?Notification.permission:'unsupported';
   var txt={granted:'<b>Avvisi sul telefono attivi.</b> Ti avvisiamo quando arrivano nuovi dati o comunicazioni mentre l’app è aperta o in secondo piano.',
     denied:'<b>Avvisi bloccati.</b> Per attivarli consenti le notifiche per questa app nelle impostazioni del browser o del telefono.',
@@ -5286,6 +5287,7 @@ function permUi(){
   if(st==='default') $('nAsk').onclick=function(){ Notification.requestPermission().then(function(){ permUi(); }); };
 }
 function systemNotify(list){
+  return;   /* avvisi di sistema disattivati (vedi sopra) */
   if(!('Notification' in window) || Notification.permission!=='granted') return;
   list.slice(0,3).forEach(function(x){
     var title=x.title||(x.box==='pack'?'Zona aggiornata':'Comunicazione Novatex'), opt={body:x.body||'',icon:'icon-192.png',badge:'icon-192.png',tag:'nvx-'+x.id};

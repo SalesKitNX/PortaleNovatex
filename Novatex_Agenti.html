@@ -4857,6 +4857,7 @@ var NVXZPDF = (function(){
    Dati della zona = pacchetto cifrato generato dalla console Novatex (AES-GCM, chiave personale
    dell'agente custodita su Firebase). Arriva via link «Importa nella app Novatex» (#nvx=…) oppure
    da file. Sul telefono resta solo cifrato; si decifra in memoria dopo l'accesso.           */
+function zOkLL(a,b){ return isFinite(a) && isFinite(b) && a>=35 && a<=48 && b>=6 && b<=19; }   /* punti fuori dall'Italia = posizione sconosciuta */
 var zDirty=true, zFocus=null, ZD=null, ZKEY=null, ZSET='', ZVISTA='', ZRIF={}, zmap=null, zgroups=null, zpins=[], zFilt='tutti', zLayers={attivi:1,persi:1,potenziali:1};
 var Z_COL={attivi:'#00893d',persi:'#c2372a',potenziali:'#2b6da8',giu:'#e0a712'};
 var SOGLIA_CALO=0.10;
@@ -5066,7 +5067,7 @@ function popupHtml(p){
     if(p.layer==='attivi' && p.t!=='nuovo') h+='<div class="ppm"><b class="'+(p.t==='giu'?'dn':'up')+'">'+(p.t==='giu'?'▼':'▲')+' '+fmtNum(p.prev)+' → '+fmtNum(p.cur)+'</b> rispetto all’anno prima</div>';
     if(p.layer==='persi' && p.pk.a) h+='<div class="ppm"><b class="lost">Picco '+p.pk.a+': '+fmtNum(p.pk.q)+' · '+fmtEur(p.pk.r)+'</b></div>';
   } else if(p.settore) h+='<div class="ppm">Settore: <b>'+esc(p.settore)+'</b></div>';
-  var dest=p.lat?(p.lat+','+p.lng):encodeURIComponent([p.c.via,p.comune,p.prov].filter(Boolean).join(' '));
+  var dest=zOkLL(p.lat,p.lng)?(p.lat+','+p.lng):encodeURIComponent([p.c.via,p.comune,p.prov].filter(Boolean).join(' '));
   h+='<div class="pacts"><a href="https://www.google.com/maps/dir/?api=1&destination='+dest+'" target="_blank" rel="noopener">Indicazioni</a>'+
      (ZSET==='ind'&&hasKit()&&p.layer!=='potenziali'?'<button data-calc="'+esc(p.nome)+'">Report risparmio EvoVent</button>':(ZSET==='ind'&&hasKit()?'<button data-calc="'+esc(p.nome)+'">Calcola risparmio EvoVent</button>':''))+'</div>';
   return h;
@@ -5116,7 +5117,7 @@ function drawMap(){
     }
     var persiQ=zpins.filter(function(p){ return p.layer==='persi' && p.pk.q>0; }).map(function(p){ return p.pk.q; }), rif=persiQ.length?Math.max(quant(persiQ,.9),1):0;
     zpins.forEach(function(p){
-      if(!zLayers[p.layer] || !p.lat) return;
+      if(!zLayers[p.layer] || !zOkLL(p.lat,p.lng)) return;
       var ll=jit(p.lat,p.lng,p.nome+p.layer), r=6;
       if(p.layer==='persi' && rif && p.pk.q>0) r=4+18*Math.pow(Math.min(p.pk.q,rif)/rif,.75);
       p.m=L.circleMarker(ll,{radius:r,color:'#fff',weight:1.5,fillColor:pinColor(p),fillOpacity:.92}).bindPopup(popupHtml(p),popOpts()).addTo(zgroups.pins);
@@ -5152,7 +5153,7 @@ function renderList(){
     return '<button class="zrow" data-zi="'+i+'"><span class="dot" style="background:'+pinColor(p)+'"></span><span style="min-width:0"><div class="nm">'+esc(p.nome)+'</div><div class="sub">'+esc(p.comune||'')+(p.prov?' ('+esc(p.prov)+')':'')+'</div></span><span class="val">'+val+'</span></button>';
   }).join('')+(L2.length>300?'<div class="empty">Mostro i primi 300: usa la ricerca per trovare gli altri.</div>':'')+(!L2.length?'<div class="empty">Nessun risultato.</div>':'');
   $('zList').querySelectorAll('[data-zi]').forEach(function(b){ b.onclick=function(){ var p=shown[+b.dataset.zi];
-    if(!p.lat){ toast('Posizione non disponibile per questo cliente'); return; }
+    if(!zOkLL(p.lat,p.lng)){ toast('Posizione non disponibile per questo cliente'); return; }
     if(!zLayers[p.layer]){ zLayers[p.layer]=1; $('zChips').querySelector('[data-l="'+p.layer+'"]').classList.add('on'); zDirty=true; }
     zFocus=p; showSection('zmap'); }; });
 }

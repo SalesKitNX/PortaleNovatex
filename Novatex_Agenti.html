@@ -1807,6 +1807,13 @@ html.dev-tablet .zupd,html.dev-desktop .zupd{align-items:center}
       <div class="pwwrap"><input type="password" id="liPass" autocomplete="current-password" placeholder="la tua password"><button type="button" class="pwtog" aria-label="Mostra password"><svg class="i"><use href="#i-eye"/></svg></button></div>
       <div class="err" id="liErr" role="alert"></div>
       <button class="btn primary" id="liGo">Accedi</button>
+      <div id="liMfa" hidden>
+        <label class="fld" for="liCode" id="liCodeLab">Codice dell’app di autenticazione</label>
+        <input type="text" id="liCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456">
+        <p class="hint" style="margin-top:6px">Apri Google o Microsoft Authenticator e scrivi il codice a 6 cifre di «Novatex Console».</p>
+        <div class="err" id="liCodeErr" role="alert"></div>
+        <button class="btn primary" id="liCodeGo">Conferma il codice</button>
+      </div>
       <button class="link" data-go-auth="s-reset">Password dimenticata?</button>
       <div class="divider"><span>Prima volta?</span></div>
       <button class="btn outline" data-go-auth="s-signup">Crea il tuo account</button>
@@ -2733,6 +2740,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
 /* Dizionario IT → EN (app agenti). Chiave = testo italiano normalizzato (spazi singoli, senza spazi ai bordi).
    I nomi di prodotto (EvoVent, Netwrap…), clienti e località restano invariati. */
 window.NVX_I18N_EN = {
+"Codice dell’app di autenticazione":"Authenticator app code","Codice ricevuto via SMS":"Code received by SMS","Conferma il codice":"Confirm code","Scrivi le 6 cifre del codice.":"Type the 6-digit code.","Apri Google o Microsoft Authenticator e scrivi il codice a 6 cifre di «Novatex Console».":"Open Google or Microsoft Authenticator and type the 6-digit code for “Novatex Console”.","Verifica…":"Checking…",
 /* --- generali --- */
 "Accedi":"Sign in","Accesso…":"Signing in…","Annulla":"Cancel","OK":"OK","Chiudi":"Close","Esci":"Sign out","Indietro":"Back","Fatto":"Done","Conferma":"Confirm",
 "Salva":"Save","Scarica":"Download","Stampa":"Print","Condividi":"Share","Aggiorna":"Update","Profilo":"Profile","Cliente":"Client","Clienti":"Clients","Mappa":"Map",
@@ -3671,8 +3679,26 @@ $('liGo').onclick=function(){
   var em=$('liEmail').value.trim(), pw=$('liPass').value; auErr('liErr');
   if(!em||!pw){ auErr('liErr','Inserisci email e password.'); return; }
   busy(this,true,'Accesso…'); var b=this;
-  B.signIn(em,pw).catch(function(e){ auErr('liErr',B.errIt(e)); }).then(function(){ busy(b,false); $('liPass').value=''; });
+  B.signIn(em,pw).catch(function(e){
+    /* account protetto con verifica in due passaggi (master): chiedo il codice invece di fermarmi */
+    if(e && e.mfa){ auErr('liErr'); liMfaShow(e.mfa); return; }
+    auErr('liErr',B.errIt(e)); }).then(function(){ busy(b,false); $('liPass').value=''; });
 };
+function liMfaShow(m){
+  $('liCodeLab').textContent=m.type==='phone'?'Codice ricevuto via SMS':'Codice dell’app di autenticazione';
+  $('liMfa').hidden=false; $('liGo').hidden=true; $('liCode').value=''; auErr('liCodeErr');
+  if(m.type==='phone' && B.mfaSendSms){ B.mfaSendSms('liCodeGo').catch(function(e){ auErr('liCodeErr',B.errIt(e)); }); }
+  setTimeout(function(){ $('liCode').focus(); },50);
+}
+function liMfaHide(){ $('liMfa').hidden=true; $('liGo').hidden=false; }
+$('liCodeGo').onclick=function(){
+  var c=$('liCode').value.replace(/\D/g,''); auErr('liCodeErr');
+  if(c.length!==6){ auErr('liCodeErr','Scrivi le 6 cifre del codice.'); return; }
+  busy(this,true,'Verifica…'); var b=this;
+  B.mfaSignIn(c).then(function(){ liMfaHide(); }).catch(function(e){ auErr('liCodeErr',B.errIt(e)); }).then(function(){ busy(b,false); });
+};
+$('liCode').addEventListener('keydown',function(e){ if(e.key==='Enter') $('liCodeGo').click(); });
+$('liEmail').addEventListener('input',liMfaHide);
 $('liPass').addEventListener('keydown',function(e){ if(e.key==='Enter') $('liGo').click(); });
 $('liEmail').addEventListener('keydown',function(e){ if(e.key==='Enter') $('liPass').focus(); });
 $('suGo').onclick=function(){

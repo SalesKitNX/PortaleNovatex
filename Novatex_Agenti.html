@@ -5414,7 +5414,9 @@ function nvxCatById(id){ for(var i=0;i<NVX_CAT.length;i++) if(NVX_CAT[i].id===id
    (una immagine per pagina, scaricata solo quando ci si arriva), cover.webp, <id>.pdf.                   */
 var CAT_BASE = 'cataloghi/';
 var CV = {c:null, pf:null, idx:0, blob:{}};
-function myCats(){ var L=(PROFILE&&PROFILE.cataloghi)||[]; return (typeof NVX_CAT!=='undefined'?NVX_CAT:[]).filter(function(c){ return L.indexOf(c.id)!==-1; }); }
+/* agenti: solo i cataloghi spuntati in console; master e amministratori: tutti (per controllarli e mostrarli ai clienti) */
+function catAll(){ return !!(PROFILE && (PROFILE.role==='master' || PROFILE.role==='admin')); }
+function myCats(){ var all=(typeof NVX_CAT!=='undefined'?NVX_CAT:[]); if(catAll()) return all.slice(); var L=(PROFILE&&PROFILE.cataloghi)||[]; return all.filter(function(c){ return L.indexOf(c.id)!==-1; }); }
 function catPageUrl(c,i){ return CAT_BASE+c.id+'/p'+('00'+i).slice(-3)+'.webp'; }
 function catPdfUrl(c){ return CAT_BASE+c.id+'/'+c.id+'.pdf'; }
 function catFileName(c){ return ('Novatex '+c.t+' '+c.s.replace(/ · /g,' ')).replace(/[^\w\- àèéìòù]/g,'').replace(/\s+/g,' ').trim()+'.pdf'; }

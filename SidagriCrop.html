@@ -2242,21 +2242,8 @@ html.dev-tablet .sl-ch,html.dev-desktop .sl-ch{grid-template-columns:1fr 1fr}
           <span class="tc-d">I cataloghi Sidagri Crop da sfogliare insieme al cliente e da mandargli in PDF.</span>
           <span class="tc-m" id="tcCat"></span><svg class="i tc-go"><use href="#i-right"/></svg>
         </button>
-        <button class="toolcard promo promo-only" data-tool="promo">
-          <span class="tc-ic"><svg class="i"><use href="#i-percent"/></svg></span>
-          <span class="tc-k">Agricoltura · campagna 2027</span><span class="tc-t">Promo commerciali</span>
-          <span class="tc-d">Le cinque promo della campagna, con i clienti della tua zona a cui proporle.</span>
-          <span class="tc-m" id="tcPromo"></span><svg class="i tc-go"><use href="#i-right"/></svg>
-        </button>
       </div>
       <button class="profrow" data-go="profilo"><svg class="i"><use href="#i-users"/></svg><span>Profilo e impostazioni<small id="profSub"></small></span><svg class="i chev"><use href="#i-right"/></svg></button>
-    </section>
-
-    <!-- ===== PROMO COMMERCIALI ===== -->
-    <section class="tab" id="promo" aria-labelledby="t-promo">
-      <h1 class="ptitle" id="t-promo">Promo commerciali</h1>
-      <p class="lead">Al posto della vecchia promo 110: cinque motivi per bussare a ogni porta.</p>
-      <div id="promoList"></div>
     </section>
 
     <!-- ===== CATALOGHI ===== -->
@@ -6028,137 +6015,6 @@ function listiniLoad(offline){
 }
 function listiniWipe(){ try{ Object.keys(localStorage).forEach(function(k){ if(/^nvx_lis_/.test(k)) localStorage.removeItem(k); }); }catch(e){} LISTINO=null; SID_LISTINO=null; }
 onShowHooks.listino=(function(prev){ return function(){ if(prev) try{ prev(); }catch(e){} if(NVX_BRAND!=='sidagri') try{ calcListino(); }catch(e){} }; })(onShowHooks.listino);
-
-</script>
-<script>
-/* ===================== PROMO COMMERCIALI (campagna 2027, Agricoltura) =====================
-   Cinque promo al posto della vecchia promo 110. Ognuna si aggancia a un'etichetta che la mappa già usa:
-     Ritorno   → cliente perso  (nessun acquisto nell'anno di riferimento)
-     Recupero  → attivo in calo (−10% o peggio sull'anno prima, stessa soglia della mappa: SOGLIA_CALO)
-     Gamma     → tutti gli attivi che non comprano ancora tutte le famiglie di prodotto
-     Tier 1    → potenziali (non sono clienti Sidagri Crop: usano un prodotto concorrente)
-     Benvenuto → potenziali e clienti senza acquisti negli ultimi 3 anni
-   Una promo con data di fine («fino») sparisce da sola il giorno dopo.
-   Per cambiare testi, date o settori basta modificare PROMO qui sotto. */
-var PROMO_SETTORI = ['agri'];
-var PROMO = [
-  {id:'ritorno', gruppo:'noti', t:'Promo Ritorno', s:'Ritorno', col:'#D21F1F', ic:'i-ret', chi:'Clienti persi', breve:'−3% sul primo ordine',
-   regole:['Per chi non ha ordinato nel 2026','−3% sul primo ordine','Valida entro il 20/1/27 (ordine a sistema)','Minimo d’ordine: 2 bancali'], fino:'2027-01-20', lista:'persi'},
-  {id:'recupero', gruppo:'noti', t:'Promo Recupero', s:'Recupero', col:'#E58A00', ic:'i-up', chi:'Clienti in calo', breve:'bonus 2–3% a fine campagna',
-   regole:['Per chi ha perso oltre il 10% sul 2025','Torna al volume 2025: bonus 2% a fine campagna','Lo supera del 10%: bonus 3%','Nota di credito a consuntivo'], lista:'giu'},
-  {id:'gamma', gruppo:'noti', t:'Promo Gamma', s:'Gamma', col:'#4A7A00', ic:'i-layers', chi:'Tutti i clienti attivi', breve:'−2% / −3% su tutto',
-   regole:['Per chi aggiunge una famiglia di prodotto','2 famiglie: −2% su tutto','3 o 4 famiglie: −3% su tutto','Soglia minima nuova famiglia: 15.000 €'], lista:'attivi'},
-  {id:'tier1', gruppo:'nuovi', t:'Prova il Tier 1', s:'Tier 1', col:'#0590C2', ic:'i-gift', chi:'Chi usa un prodotto concorrente', breve:'al prezzo del Tier 2',
-   regole:['Primo acquisto di rete Tier 1 al prezzo del Tier 2','Massimo 72 rotoli per cliente','Una volta sola: toccare con mano la differenza'], lista:'potenziali'},
-  {id:'benvenuto', gruppo:'nuovi', t:'Benvenuto in Sidagri Crop', s:'Benvenuto', col:'#17345C', ic:'i-userplus', chi:'Mai serviti negli ultimi 3 anni', breve:'pre-campagna sul primo ordine',
-   regole:['Condizioni di pre-campagna anche fuori periodo sul primo ordine (attiva fino al 30/03/27)','Kit di benvenuto con catalogo bandiera o espositore Sidagri Crop + serata formazione'], fino:'2027-03-30', lista:'potenziali'}
-];
-var PROMO_NOTA = 'Le promo si sommano alle normali condizioni di pre-campagna.';
-function promoById(id){ for(var i=0;i<PROMO.length;i++) if(PROMO[i].id===id) return PROMO[i]; return null; }
-function promoOggi(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
-function promoAttiva(pr){ return !pr.fino || promoOggi()<=pr.fino; }
-function promoAttive(){ return PROMO.filter(promoAttiva); }
-function hasPromo(){ return document.body.classList.contains('s-promo'); }
-function promoSync(){
-  var sett=(PROFILE&&PROFILE.settori&&PROFILE.settori.length)?PROFILE.settori:['agri','ind'];
-  var boss=!!(PROFILE && (PROFILE.role==='master'||PROFILE.role==='admin'));
-  var on=boss || PROMO_SETTORI.some(function(s){ return sett.indexOf(s)!==-1; });
-  document.body.classList.toggle('s-promo', on && promoAttive().length>0);
-  promoTc();
-}
-
-/* ---- famiglie di prodotto (dal database vendite: Category Segment1) ---- */
-function famNome(c){ c=String(c||'').trim(); return c? c.charAt(0).toUpperCase()+c.slice(1).toLowerCase() : c; }
-function famTutte(S){ var set={}; (S.clienti||[]).forEach(function(c){ Object.keys(c.pa||{}).forEach(function(a){ Object.keys((c.pa[a]||{}).c||{}).forEach(function(k){ if(k && k!=='—') set[k]=1; }); }); }); return Object.keys(set).sort(); }
-function famDi(c,anno){ var x=(c.pa||{})[anno]; return x&&x.c?Object.keys(x.c).filter(function(k){ var v=x.c[k]; return k && k!=='—' && v && ((v[0]||0)>0 || (v[1]||0)>0); }).sort():[]; }
-function elenco(a){ return a.length<2?a.join(''):a.slice(0,-1).join(', ')+' o '+a[a.length-1]; }
-function elencoE(a){ return a.length<2?a.join(''):a.slice(0,-1).join(', ')+' e '+a[a.length-1]; }
-
-/* ---- promo che valgono per un punto della mappa (p = elemento di zpins), con la frase già pronta per l'agente ---- */
-function promoCalc(p, sett, rif, fams){
-  if(PROMO_SETTORI.indexOf(sett)===-1) return [];
-  var out=[], add=function(id,hook,extra,br){ var pr=promoById(id); if(pr && promoAttiva(pr)) out.push(Object.assign({id:id,hook:hook,br:br||pr.breve},extra||{})); };
-  var m=metrOf(sett);
-  if(p.layer==='persi'){
-    var anni=Object.keys(p.c.pa||{}).filter(function(a){ var x=p.c.pa[a]; return x && ((x.r||0)>0 || (x.q||0)>0); }).map(Number).sort(function(a,b){ return b-a; });
-    var last=anni[0], lx=last?p.c.pa[last]:null, fl=last?famDi(p.c,last).map(famNome):[];
-    add('ritorno',(last?'Ultimo ordine nel '+last+': '+fmtEur(lx.r||0)+(fl.length?' ('+elencoE(fl)+')':'')+'. ':'')+'Proponi −3% sul primo ordine entro il 20/1/27, minimo 2 bancali.',null,'−3% sul primo ordine');
-    if(!last || last<=rif-3) add('benvenuto','Non è servito da oltre 3 anni: vale come nuovo cliente. Condizioni di pre-campagna sul primo ordine fino al 30/3/27, più kit di benvenuto.',null,'pre-campagna sul primo ordine');
-  } else if(p.layer==='attivi'){
-    if(p.t==='giu'){
-      var ob=p.prev, ob3=Math.round(p.prev*1.1), manca=Math.max(0,ob-p.cur);
-      add('recupero',(rif-1)+': '+fmtNum(p.prev)+' '+m+', '+rif+': '+fmtNum(p.cur)+'. Tornando a '+fmtNum(ob)+' prende il 2% a fine campagna, da '+fmtNum(ob3)+' in su il 3%'+(manca?' (mancano '+fmtNum(manca)+')':'')+'.',
-        {ob:ob, ob3:ob3, manca:manca}, manca?('mancano '+fmtNum(manca)+' '+m+' per il 2%'):'bonus 2–3% già a portata');
-    }
-    var has=famDi(p.c,rif), mancano=fams.filter(function(f){ return has.indexOf(f)===-1; });
-    if(has.length && has.length<4 && mancano.length){
-      var n=has.length+1, sc=n>=3?3:2;
-      add('gamma','Compra '+elencoE(has.map(famNome))+'. Con '+elenco(mancano.map(famNome))+' (almeno 15.000 €) passa a '+n+' famiglie: −'+sc+'% su tutto'+((p.c.pa[rif]||{}).r?', circa '+fmtEur(Math.round((p.c.pa[rif].r||0)*sc/100))+' su un anno come il '+rif:'')+'.',
-        {has:has, mancano:mancano, sc:sc}, '−'+sc+'% su tutto con '+(mancano.length===1?famNome(mancano[0]):'una famiglia in più'));
-    }
-  } else if(p.layer==='potenziali'){
-    add('tier1','Usa un prodotto concorrente: primo acquisto di rete Tier 1 al prezzo del Tier 2, fino a 72 rotoli, una volta sola.');
-    add('benvenuto','Nuovo cliente: condizioni di pre-campagna sul primo ordine fino al 30/3/27, più kit di benvenuto con catalogo o espositore e serata formazione.');
-  }
-  return out;
-}
-function metrOf(s){ return (ZD && ZD.settori[s] && ZD.settori[s].metrica)||'bobine'; }
-
-/* ---- anteprima nel fumetto della mappa e riga sotto ai clienti in elenco ---- */
-function promoPopHtml(p){
-  if(!p.promo || !p.promo.length) return '';
-  return '<div class="ppromo"><div class="pph">Promo per questo cliente</div>'+p.promo.map(function(x){ var pr=promoById(x.id);
-    return '<button class="ppr" data-promo="'+x.id+'" style="--pc:'+pr.col+'" aria-label="'+esc(pr.t+': '+x.hook)+'"><b>'+esc(pr.t)+' · '+esc(x.br)+'</b><span>'+esc(x.hook)+'</span><svg class="i"><use href="#i-right"/></svg></button>'; }).join('')+'</div>';
-}
-function promoRowHtml(p){
-  if(!p.promo || !p.promo.length) return '';
-  return '<div class="zpr">'+p.promo.map(function(x){ var pr=promoById(x.id); return '<span style="--pc:'+pr.col+'">'+esc(pr.s)+' · '+esc(x.br)+'</span>'; }).join('')+'</div>';
-}
-
-/* ---- sezione Promo commerciali ---- */
-function promoConteggi(){
-  var n={}; PROMO.forEach(function(pr){ n[pr.id]=null; });
-  if(typeof ZD==='undefined' || !ZD) return n;
-  PROMO_SETTORI.forEach(function(s){
-    var S=ZD.settori[s]; if(!S || settoriDisp().indexOf(s)===-1) return;
-    promoPins(s).forEach(function(p){ (p.promo||[]).forEach(function(x){ n[x.id]=(n[x.id]||0)+1; }); });
-    PROMO.forEach(function(pr){ if(n[pr.id]===null) n[pr.id]=0; });
-  });
-  return n;
-}
-function promoTc(){ var t=$('tcPromo'); if(!t) return; var a=promoAttive().length; t.textContent=a?(a+' promo attive per la campagna 2027'):''; }
-function promoRender(){
-  var box=$('promoList'); if(!box) return;
-  var n=promoConteggi(), grp={noti:'Clienti che conosciamo',nuovi:'Nuovi clienti'};
-  var html='';
-  ['noti','nuovi'].forEach(function(g){
-    var L=promoAttive().filter(function(pr){ return pr.gruppo===g; }); if(!L.length) return;
-    html+='<h2 class="pr-g pr-'+g+'">'+grp[g]+'</h2><div class="prgrid">'+L.map(function(pr){
-      var c=n[pr.id], cnt=c===null?'<span class="pr-n muted">I clienti compaiono quando arrivano i dati della tua zona</span>'
-        :(c?'<span class="pr-n"><b>'+c+'</b> '+(c===1?'cliente':'clienti')+' nella tua zona</span><button class="btn sm pr-go" data-promo-list="'+pr.id+'">Vedi i clienti<svg class="i"><use href="#i-right"/></svg></button>'
-        :'<span class="pr-n muted">Nessun cliente della tua zona, per ora</span>');
-      return '<article class="prcard" id="promo-'+pr.id+'" style="--pc:'+pr.col+'">'+
-        '<div class="pr-h"><span class="pr-ic"><svg class="i"><use href="#'+pr.ic+'"/></svg></span><h3>'+esc(pr.t)+'</h3></div>'+
-        '<div class="pr-b"><p class="pr-chi">'+esc(pr.chi)+'</p><ul>'+pr.regole.map(function(r){ return '<li>'+esc(r)+'</li>'; }).join('')+'</ul></div>'+
-        '<div class="pr-f">'+cnt+'</div></article>';
-    }).join('')+'</div>';
-  });
-  html+='<p class="pr-nota">'+esc(PROMO_NOTA)+' Le promo di ogni cliente le trovi anche sulla mappa (tocca il punto) e sotto il suo nome nell’elenco Clienti.</p>';
-  box.innerHTML=html;
-}
-onShowHooks.promo=function(){ promoRender(); if(_promoFocus){ var id=_promoFocus; _promoFocus=null; setTimeout(function(){ var el=$('promo-'+id); if(!el) return; el.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'}); el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); },60); } };
-var _promoFocus=null;
-document.addEventListener('click',function(e){
-  var b=e.target.closest('[data-promo]'); if(b){ e.preventDefault(); _promoFocus=b.dataset.promo; showSection('promo'); return; }
-  var l=e.target.closest('[data-promo-list]'); if(l){ promoApriLista(l.dataset.promoList); }
-});
-/* «Vedi i clienti»: elenco Clienti della zona filtrato su quella promo */
-function promoApriLista(id){
-  var pr=promoById(id); if(!pr) return;
-  if(settoriDisp().indexOf(PROMO_SETTORI[0])!==-1 && ZSET!==PROMO_SETTORI[0]){ ZSET=PROMO_SETTORI[0]; ZVISTA=''; zonaRender(); }
-  if(!ZD){ toast('I clienti compaiono quando arrivano i dati della tua zona'); return; }
-  zPromo=id; $('zQ').value=''; showSection('zlist');
-}
 
 </script>
 <script>

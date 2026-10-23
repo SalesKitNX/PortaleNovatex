@@ -2226,7 +2226,7 @@ html.dev-tablet .sl-ch,html.dev-desktop .sl-ch{grid-template-columns:1fr 1fr}
       <div class="tools">
         <button class="toolcard zona" data-tool="zona">
           <span class="tc-ic"><svg class="i"><use href="#i-map"/></svg></span>
-          <span class="tc-k">Agricoltura e Industria</span><span class="tc-t">Geomarketing Zona</span>
+          <span class="tc-k">Linea Industria</span><span class="tc-t">Geomarketing Zona</span>
           <span class="tc-d">La tua zona sulla mappa: clienti attivi, persi e potenziali, con il resoconto delle vendite.</span>
           <span class="tc-m" id="tcZona">In attesa dei dati da Sidagri Crop</span><svg class="i tc-go"><use href="#i-right"/></svg>
         </button>
@@ -2635,7 +2635,7 @@ html.dev-tablet .sl-ch,html.dev-desktop .sl-ch{grid-template-columns:1fr 1fr}
     <div class="pv-body" tabindex="0">
       <p class="pv-lead">Informativa ai sensi degli artt. 13 e 14 del Regolamento (UE) 2016/679 (GDPR) per chi usa l’app «Agenti Sidagri Crop». Ultimo aggiornamento: ottobre 2026.</p>
       <h3>1. Titolare del trattamento</h3>
-      <p><span class="pv-tbd">[ragione sociale, sede e P.IVA del titolare del trattamento per Sidagri Crop]</span>. Per qualsiasi richiesta sulla privacy: <span class="pv-tbd">[email per la privacy]</span>.</p>
+      <p>SIDAGRI CROP S.R.L. – Società Unipersonale, Direzione e Coordinamento Novatex Italia S.p.A., Via per Dolzago 37, 23848 Oggiono (LC), Italia. CF – P.IVA – Registro Imprese LC: 03617650134, REA LC 321809. Per qualsiasi richiesta sulla privacy: <a href="mailto:privacy@sidagricrop.it">privacy@sidagricrop.it</a>.</p>
       <h3>2. Quali dati trattiamo</h3>
       <ul>
         <li><b>Dati del tuo account</b>: nome, cognome, email di lavoro, telefono (se lo indichi), ruolo, settori e cataloghi abilitati, stato dell’account.</li>
@@ -5455,6 +5455,7 @@ function zonaRender(){
   if(!ZVISTA || (ZVISTA!=='ALL' && anni.indexOf(+ZVISTA)===-1)) ZVISTA=String(anni[0]||'');
   $('zAnno').innerHTML=anni.map(function(a,i){ return '<option value="'+a+'">'+a+(i===0?' (rif.)':'')+'</option>'; }).join('')+'<option value="ALL">Tutti gli anni</option>';
   $('zAnno').value=ZVISTA;
+  $('zAnno').style.display=anni.length?'':'none';   /* agente nuovo senza clienti: niente scelta dell'anno */
   if(window.NVX_DEV==='desktop') $('zInfo').open=true;
   buildPins(); if(_curTab==='zmap') drawMap(); renderList(); renderResoconto();
   if(_curTab==='promo' && typeof promoRender==='function') promoRender();

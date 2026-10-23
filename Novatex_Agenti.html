@@ -3452,7 +3452,7 @@ window.NVX_I18N_PAT=window.NVX_I18N_PAT.concat([
 var FIREBASE_CONFIG = {"apiKey": "AIzaSyBTwyEhNCZmOiO33F1jmDXStaMYd8MVoeY", "authDomain": "novatex-agenti.firebaseapp.com", "projectId": "novatex-agenti", "storageBucket": "novatex-agenti.firebasestorage.app", "messagingSenderId": "26229274510", "appId": "1:26229274510:web:cf0dba302e5ddb2d9916df"};
 var FIREBASE_EMULATOR = null;
 /*__FIREBASE_END__*/
-var APP_VERSION = '2026.10-u7';
+var APP_VERSION = '2026.10-u8';
 if(window.NVXI18N) NVXI18N.init();
 
 var $ = function(id){ return document.getElementById(id); };
@@ -3469,6 +3469,12 @@ function agentDisplayName(){ if(!PROFILE) return 'Rete vendita Novatex'; var n=(
 /* Logo Novatex: incorporato una sola volta e riusato ovunque */
 var NVX_LOGO = (document.querySelector('#auth .brandlogo')||{}).src || '';
 document.querySelectorAll('.brandlogo').forEach(function(im){ if(!im.getAttribute('src')) im.src=NVX_LOGO; });
+/* marchio: «novatex» (Novatex_Agenti.html) o «sidagri» (SidagriCrop.html), deciso in fase di build.
+   NVX_LOGO_DOC = logo da usare su fondo bianco (report e PDF): per Sidagri Crop è il logo su riquadro verde */
+var NVX_BRAND = (typeof NVX_BRAND_BUILD!=='undefined' && NVX_BRAND_BUILD) || 'novatex';
+var NVX_LOGO_DOC = (typeof NVX_BADGE_BUILD!=='undefined' && NVX_BADGE_BUILD) || NVX_LOGO;
+var NVX_FILES = {novatex:'Novatex_Agenti.html', sidagri:'SidagriCrop.html'};
+function brandOf(p){ return (p && p.brand==='sidagri') ? 'sidagri' : 'novatex'; }
 
 /* ---------- toast + dialog ---------- */
 var _toastT=null;
@@ -3575,19 +3581,25 @@ onShowHooks.home=paintGreeting;
 
 /* ---------- Apertura animata (una volta per sessione; tocca o scorri per entrare) ---------- */
 function markSvg(cls){ return '<svg class="mark '+(cls||'')+'" viewBox="0 0 483 455" role="img" aria-label="Novatex"><use href="#nx-s" class="d-s"/><use href="#nx-t" class="d-t"/><use href="#nx-l" class="d-l"/><use href="#nx-r" class="d-r"/></svg>'; }
+/* i puntini del marchio Sidagri Crop, ridisegnati per l'apertura animata (compaiono uno dopo l'altro) */
+function sidDots(){
+  var D=[[34,152,17],[193,152,34],[354,152,34],[34,279,34],[193,279,53],[354,279,53],[524,279,34],[662,279,34],[34,410,34],[193,410,53],[354,410,53],[524,410,34],[662,410,34],[193,537,34],[354,537,34]];
+  return '<svg class="siddots" viewBox="-20 100 720 490" aria-hidden="true">'+D.map(function(d,i){ return '<circle cx="'+d[0]+'" cy="'+d[1]+'" r="'+d[2]+'" style="--i:'+i+'"/>'; }).join('')+'</svg>';
+}
 function wordSvg(cls){ return '<svg class="'+(cls||'')+'" viewBox="470 110 1252 274" aria-hidden="true"><use href="#nx-w"/></svg>'; }
 function nvxIntro(force){
   var seen=false; try{ seen=sessionStorage.getItem('nvx-intro')==='1'; }catch(e){}
   var reduced=window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   if((seen&&!force) || (reduced&&!force) || /[?&]nointro\b/.test(location.search)) return;
   try{ sessionStorage.setItem('nvx-intro','1'); }catch(e){}
-  var el=document.createElement('div'); el.className='intro'; el.setAttribute('role','dialog'); el.setAttribute('aria-label',i18n('Novatex rete vendita. Tocca per entrare')); el.setAttribute('translate','no');
+  var el=document.createElement('div'); el.className='intro'; el.setAttribute('role','dialog'); el.setAttribute('aria-label',NVX_BRAND==='sidagri'?'Sidagri Crop, rete vendita. Tocca per entrare':i18n('Novatex rete vendita. Tocca per entrare')); el.setAttribute('translate','no');
   var word=i18n('Rete vendita').split('').map(function(c,i){ return '<span style="--i:'+i+'">'+c+'</span>'; }).join('');
   el.innerHTML='<span class="halo"></span>'+
     '<svg class="fields" viewBox="0 0 400 300" preserveAspectRatio="none" fill="none" aria-hidden="true">'+
     '<path d="M-20 302C40 172 170 112 420 106" stroke="#00AF40" stroke-width="22"/><path d="M30 302C80 198 190 152 420 148" stroke="#00AF40" stroke-width="13"/>'+
     '<path d="M80 302C120 224 210 192 420 190" stroke="#00AF40" stroke-width="7"/><path d="M130 302C160 252 230 230 420 229" stroke="#00AF40" stroke-width="3"/></svg>'+
-    '<div class="center">'+markSvg('assemble')+wordSvg('word')+'<span class="rule"></span><h1 aria-hidden="true">'+word+'</h1><p>'+i18n('Agricoltura e Industria')+'</p></div>'+
+    (NVX_BRAND==='sidagri' ? '<div class="center sid">'+sidDots()+'<img class="sidword" src="'+NVX_LOGO+'" alt="Sidagri Crop"><span class="rule"></span><h1 aria-hidden="true">'+word+'</h1><p>'+i18n('Linea Industria')+'</p></div>'
+      : '<div class="center">'+markSvg('assemble')+wordSvg('word')+'<span class="rule"></span><h1 aria-hidden="true">'+word+'</h1><p>'+i18n('Agricoltura e Industria')+'</p></div>')+
     '<div class="enter"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 15l6-6 6 6"/></svg></i>'+i18n('Tocca per entrare')+'</div>';
   document.documentElement.classList.add('intro-on'); document.body.appendChild(el);
   var done=false, ready=false; setTimeout(function(){ ready=true; },1400);
@@ -3627,7 +3639,7 @@ var NVXB = (function(){
   var cfg = (typeof FIREBASE_CONFIG!=='undefined' && FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey) ? FIREBASE_CONFIG : null;
   var emu = (typeof FIREBASE_EMULATOR!=='undefined' && FIREBASE_EMULATOR) ? FIREBASE_EMULATOR : null;
   var PWD_MAX_DAYS = 182, CHUNK = 700000, INBOX_MAX = 40;
-  var ADMIN_ACTIONS = ['console-login','approve','edit-user','disable','reactivate','role','pack-generate','pack-send','pack-pdf','pack-html','pack-delete','msg-send','alert-ack','mfa-on'];
+  var ADMIN_ACTIONS = ['console-login','approve','edit-user','disable','reactivate','role','pack-generate','pack-send','pack-pdf','pack-html','pack-delete','msg-send','alert-ack','mfa-on','listino-sync'];
   var AGENT_ACTIONS = ['access','pack-accept'];   /* l'agente può scrivere nel registro solo accessi e conferme di ricezione */
   function isAdminRole(r){ return r==='admin'||r==='master'; }
   function sha256(str){ return crypto.subtle.digest('SHA-256',new TextEncoder().encode(str)).then(function(b){ return Array.prototype.map.call(new Uint8Array(b),function(x){ return ('0'+x.toString(16)).slice(-2); }).join(''); }); }
@@ -3724,6 +3736,9 @@ var NVXB = (function(){
       touchLogin:function(ver){ return F.updateDoc(D('users',cur.uid),{lastLoginAt:F.serverTimestamp(),appVersion:ver||''}).catch(function(){}); },
       setZonaSeen:function(gen,mese){ return F.updateDoc(D('users',cur.uid),{zonaGen:gen|0,zonaMese:String(mese||'').slice(0,28),zonaAt:F.serverTimestamp()}); },
       getMyKey:function(){ return F.getDoc(D('keys',cur.uid)).then(function(s){ return s.exists()?s.data().k:null; }); },
+      /* listini prezzi (fuori dal file pubblico): li leggono solo gli agenti del marchio giusto; li scrive la console di un master */
+      getListino:function(id){ return F.getDoc(D('listini',id)).then(function(s){ return s.exists()?s.data():null; }); },
+      putListino:function(id,ver,data,byName){ return F.setDoc(D('listini',id),{data:data,ver:String(ver),byName:byName||'',at:F.serverTimestamp()}); },
       addReport:function(rec,pdf){
         var id=rec.id; rec=Object.assign({},rec,{uid:cur.uid,email:cur.email,createdAt:F.serverTimestamp()});
         /* se un invio precedente era già arrivato (es. rete caduta prima della risposta), lo considero fatto */
@@ -3892,6 +3907,9 @@ function decide(user,p,offline){
 }
 var _entered=false;
 function enterApp(user,p,offline){
+  /* ogni agente usa l'app del suo marchio: se entra dal link sbagliato lo porto su quello giusto (stesso accesso) */
+  var _want=brandOf(p);
+  if(_want!==NVX_BRAND && (p.role||'agent')==='agent' && NVX_FILES[_want]){ document.body.classList.add('redirecting'); location.replace(NVX_FILES[_want]+location.search+location.hash); return; }
   PROFILE=Object.assign({},p,{id:user.uid,_offline:!!offline});
   var sett=p.settori&&p.settori.length?p.settori:['agri','ind'];
   document.body.classList.toggle('s-ind',sett.indexOf('ind')!==-1);
@@ -3914,6 +3932,7 @@ function enterApp(user,p,offline){
   var kk='nvx_k_'+user.uid;
   (offline?Promise.reject(0):B.getMyKey()).then(function(k){ if(k) lsSet(kk,k); return k; }).catch(function(){ return lsGet(kk,null); })
     .then(function(k){ if(typeof zonaStart==='function') zonaStart(k,first); });
+  if(typeof listiniLoad==='function') listiniLoad(!!offline);
   if(typeof onLoginHook==='function') onLoginHook();
   if(typeof notifStart==='function') notifStart();
 }
@@ -3921,6 +3940,7 @@ function leaveApp(){
   if(!document.body.classList.contains('authed') && !PROFILE) return;
   PROFILE=null; _entered=false;
   document.body.classList.remove('authed','client','s-ind','s-agri','s-cat','s-promo');
+  if(typeof listiniWipe==='function') listiniWipe();
   if(typeof zonaStop==='function') zonaStop();
   if(typeof notifStop==='function') notifStop();
 }
@@ -4240,17 +4260,18 @@ function reco(){
 }
 
 /* ===== LISTINO EvoVent 2026 (Utilizzatore / Rivenditore) ===== */
-const LISTINO = {
-  evo30:  { ut:[113.30,107.60,102.20], riv:[102.20,96.05] },
-  evo250: { ut:[145.00,137.75,130.90], riv:[130.90,123.25] },
-  ext30:  { ut:[89.10,84.65,80.40],    riv:[80.40,75.75] },
-  ext250: { ut:[113.40,107.75,102.40], riv:[102.40,96.40] },
-};
-const LISTINO_TRUCK_SOGLIA = 22; /* da 22 bancali scatta "Camion completo" nel listino Rivenditore (soglia interna, non mostrata all'agente) */
+/* i prezzi arrivano da Firebase dopo l'accesso (listini.js): nel file pubblicato non ci sono */
+var LISTINO = null;
+var LISTINO_TRUCK_SOGLIA = 22; /* da 22 bancali scatta "Camion completo" nel listino Rivenditore (soglia interna, non mostrata all'agente) */
 let lTipo = 'ut';
 seg('lTipo', v=>{ lTipo=v; calcListino(); });
 function forceListinoUt(){ if(lTipo!=='ut'){ g('lTipo').querySelector('[data-v="ut"]').click(); } }
 function calcListino(){
+  var wait=g('lWait');
+  if(!LISTINO){ g('lPriceBox').style.display='none'; g('lContactBox').style.display='none';
+    if(!wait){ wait=document.createElement('div'); wait.id='lWait'; wait.className='note'; g('lPriceBox').parentNode.insertBefore(wait,g('lPriceBox')); }
+    wait.innerHTML='<b>Listino non ancora disponibile.</b><br>Il listino si scarica dopo l’accesso: collegati a internet una volta e comparirà qui, poi funziona anche senza rete.'; wait.style.display=''; return; }
+  if(wait) wait.style.display='none';
   const k = g('lProd').value, qty = Math.max(1, Math.round(num(g('lBancali').value)));
   const rpp = P[k].rpp;
   const tiers = lTipo==='riv' ? ['Pochi bancali','Camion completo'] : ['1 bancale','2–5','6–10','oltre 10'];
@@ -4519,7 +4540,7 @@ function reportHTML(m){
       '<div class="rp-k3"><div><div class="v">'+m.com.need+'</div><div class="l">pallet di prodotto per attivare il comodato</div></div>'+
       '<div class="o"><div class="v" style="color:#E97132">~'+it0(m.com.totBancali)+'</div><div class="l">bancali fasciabili coperti</div></div>'+
       '<div class="o"><div class="v" style="color:#E97132">~'+it0(m.com.trucks)+'</div><div class="l">camion completi equivalenti</div></div></div>'+
-      '<div class="rp-ph"><img src="'+REPORT_PHOTOS.comodato+'" alt=""><div class="rp-quote">«Con un impegno di fornitura contenuto installiamo la fasciatrice — fissa o mobile — in comodato gratuito. Nessun acquisto, nessun noleggio.»</div></div>';
+      '<div class="rp-ph'+(REPORT_PHOTOS.comodato?'':' nophoto')+'">'+(REPORT_PHOTOS.comodato?'<img src="'+REPORT_PHOTOS.comodato+'" alt="">':'')+'<div class="rp-quote">«Con un impegno di fornitura contenuto installiamo la fasciatrice — fissa o mobile — in comodato gratuito. Nessun acquisto, nessun noleggio.»</div></div>';
   } else if(m.wantsMachine){
     lower='<div class="rp-sec"><i></i>Comodato gratuito della fasciatrice</div><div class="rp-note">Seleziona <b class="evoC">EvoVent 7</b> o <b class="extC">EvoVent 10</b> come soluzione proposta per includere anche il dettaglio del comodato.</div>';
   } else {
@@ -4527,10 +4548,10 @@ function reportHTML(m){
       '<p class="rp-p">Ecco cosa rende <b>'+pn(m.nameB,m.famB)+'</b> la scelta giusta per il tuo prossimo imballo.</p>'+
       '<div class="rp-ben">'+m.benefits.map(b=>'<div><i></i>'+esc(b)+'</div>').join('')+'</div>'+
       (m.video?'<div class="rp-vid"><div class="k">GUARDA IL TEST DI STABILITÀ</div><a href="'+m.video.embed+'" target="_blank" rel="noopener">▶ '+esc(m.video.title)+'</a><div class="u">'+esc(m.video.embed)+'</div><div class="nt">La fasciatrice dedicata è disponibile anche in comodato gratuito con forniture importanti: parlane con il tuo agente Novatex.</div></div>':'')+
-      '<div class="rp-pt"><img src="'+NVX_LOGO+'" class="n" alt="Novatex"><span class="x">×</span>'+(m.logoUrl?'<img src="'+(m.logo?m.logo.data:m.logoUrl)+'" class="c" alt="">':'<span class="cn">'+esc(m.client)+'</span>')+'</div>';
+      '<div class="rp-pt"><img src="'+NVX_LOGO_DOC+'" class="n" alt="Novatex"><span class="x">×</span>'+(m.logoUrl?'<img src="'+(m.logo?m.logo.data:m.logoUrl)+'" class="c" alt="">':'<span class="cn">'+esc(m.client)+'</span>')+'</div>';
   }
   return '<div class="rp"><div class="rp-bar"><i style="flex:14;background:#156082"></i><i style="flex:3.5;background:#E97132"></i><i style="flex:3.5;background:#4EA72E"></i></div><div class="rp-in">'+
-    '<div class="rp-head"><img src="'+NVX_LOGO+'" alt="Novatex"><div class="r"><div class="k">REPORT DI CONVENIENZA</div><div class="d">'+m.date+'</div></div></div>'+
+    '<div class="rp-head"><img src="'+NVX_LOGO_DOC+'" alt="Novatex"><div class="r"><div class="k">REPORT DI CONVENIENZA</div><div class="d">'+m.date+'</div></div></div>'+
     '<div class="rp-hero"><div class="t"><div class="k">PREPARATO PER</div><div class="c">'+esc(m.client)+'</div><div class="a">A cura di '+esc(m.agent)+' · Novatex Italia S.p.A.</div></div>'+
       (m.logoUrl?'<div class="lg"><img src="'+(m.logo?m.logo.data:m.logoUrl)+'" alt=""></div>':'')+'</div>'+
     '<div class="rp-h2">Il tuo risparmio con '+pn(m.nameB,m.famB)+'</div>'+
@@ -4569,7 +4590,7 @@ function buildPDF(m){
   /* barra colori + intestazione */
   F(C.teal); doc.rect(0,0,140,3,'F'); F(C.orange); doc.rect(140,0,35,3,'F'); F(C.green); doc.rect(175,0,35,3,'F');
   const lgW=44, lgH=lgW*44/209;
-  try{ doc.addImage(NVX_LOGO,'PNG',M,11,lgW,lgH); }catch(e){}
+  try{ doc.addImage(NVX_LOGO_DOC,'PNG',M,11,lgW,lgH); }catch(e){}
   font(7.5,'bold'); T(C.teal); doc.text('REPORT DI CONVENIENZA',W-M,14.5,{align:'right',charSpace:0.5});
   font(9,'normal'); T(C.mute); doc.text(pdfTxt(m.date),W-M,19.5,{align:'right'});
   S(C.line); doc.setLineWidth(0.3); doc.line(M,25,W-M,25);
@@ -4648,9 +4669,10 @@ function buildPDF(m){
     y+=25;
     const avail=264-y, pw=Math.min(100, avail*900/373), ph=pw*373/900;
     if(ph>18){
-      try{ doc.addImage(REPORT_PHOTOS.comodato,'JPEG',M,y,pw,ph); }catch(e){}
-      font(7.5,'normal'); T(C.mute); doc.text('La fasciatrice in comodato gratuito Novatex',M,y+ph+4);
-      const qx=M+pw+6, qw=CW-pw-6; S(C.teal); doc.setLineWidth(0.4); doc.setLineDashPattern([1.2,1],0); doc.roundedRect(qx,y,qw,ph,3,3,'S'); doc.setLineDashPattern([],0);
+      const hasPh=!!REPORT_PHOTOS.comodato;
+      if(hasPh){ try{ doc.addImage(REPORT_PHOTOS.comodato,'JPEG',M,y,pw,ph); }catch(e){}
+        font(7.5,'normal'); T(C.mute); doc.text('La fasciatrice in comodato gratuito Novatex',M,y+ph+4); }
+      const qx=hasPh?M+pw+6:M, qw=hasPh?CW-pw-6:CW; S(C.teal); doc.setLineWidth(0.4); doc.setLineDashPattern([1.2,1],0); doc.roundedRect(qx,y,qw,ph,3,3,'S'); doc.setLineDashPattern([],0);
       font(9.5,'italic'); T(C.ink); const Q=lines('«Con un impegno di fornitura contenuto installiamo la fasciatrice — fissa o mobile — in comodato gratuito. Nessun acquisto, nessun noleggio.»',qw-10);
       const qy=y+ph/2-(Q.length*lh(9.5))/2+3; Q.forEach((l,i)=>doc.text(l,qx+5,qy+i*lh(9.5)));
       y+=ph+8;
@@ -4681,7 +4703,7 @@ function buildPDF(m){
     font(11,'bold'); const cn=hasLogo?null:lines(m.client,70,1)[0];
     const cd=hasLogo?fitImg(m.logo,34,11):null; const cW=hasLogo?cd.w:doc.getTextWidth(cn);
     const tot=nW+14+cW; let x=M+(CW-tot)/2;
-    try{ doc.addImage(NVX_LOGO,'PNG',x,y+7.5-nH/2,nW,nH); }catch(e){}
+    try{ doc.addImage(NVX_LOGO_DOC,'PNG',x,y+7.5-nH/2,nW,nH); }catch(e){}
     font(13,'bold'); T(C.mute); doc.text('×',x+nW+7,y+9.2,{align:'center'});
     if(hasLogo){ try{ doc.addImage(m.logo.data,'PNG',x+nW+14,y+7.5-cd.h/2,cd.w,cd.h); }catch(e){} }
     else { font(11,'bold'); T(C.ink); doc.text(cn,x+nW+14,y+9.2); }
@@ -5323,6 +5345,7 @@ function metr(){ return (ZD.settori[ZSET]&&ZD.settori[ZSET].metrica)||'bobine'; 
 
 /* ---- 4) interfaccia ---- */
 function zonaRender(){
+  if(typeof slRender==='function') setTimeout(slRender,0);
   var has=!!ZD && settoriDisp().length>0;
   var pend=!!(ZPEND&&ZD); $('zPend').hidden=!pend; document.body.classList.toggle('has-zpend',pend);
   if(pend) $('zPendT').textContent='Nuovo aggiornamento della zona: dati di '+zMese(ZPEND.d.generatoIl);
@@ -5530,7 +5553,7 @@ function repList(title,arr,valFn){
 function resocontoPdf(fromUpd){
   var btn=$('rpPdf'); if(btn) btn.disabled=true;
   return loadJsPDF().then(function(){
-    var doc=NVXZPDF.make(ZD,{who:agentDisplayName(),logo:NVX_LOGO,settori:settoriDisp(),kicker:'Resoconto zona',
+    var doc=NVXZPDF.make(ZD,{who:agentDisplayName(),logo:NVX_LOGO_DOC,settori:settoriDisp(),kicker:'Resoconto zona',
       footer:'Novatex Italia S.p.A. · Documento riservato ad uso interno della rete vendita'});
     var blob=doc.output('blob'), name='Resoconto_zona_'+zMese(ZD.generatoIl).replace(/\s+/g,'_')+'_'+agentDisplayName().replace(/\s+/g,'_')+'.pdf';
     window._lastResoconto=blob;
@@ -5805,6 +5828,35 @@ window.addEventListener('resize',function(){ if(!$('catZoom').hidden) czFit(); }
   },{capture:true});
   st.addEventListener('dblclick',function(e){ if($('catZoom').hidden) catZoomOpen(e); });
 })();
+
+</script>
+<script>
+/* ===================== LISTINI PREZZI (da Firebase, mai nel file pubblicato) =====================
+   App Novatex: listino EvoVent (Utilizzatore / Rivenditore) per chi ha il Sales Kit.
+   App Sidagri Crop: listino Synmat Italia / STIDA.
+   Li scrive la console di un master; le regole li fanno leggere solo agli agenti del marchio giusto.
+   Una copia resta sul telefono (per l'uso senza rete) e si cancella all'uscita. */
+var SID_LISTINO = null;
+function lisId(){ return NVX_BRAND==='sidagri' ? 'sidagri' : 'novatex'; }
+function lisKey(id){ return 'nvx_lis_'+id+'_'+(PROFILE&&PROFILE.id||''); }
+function lisApply(id,doc){
+  if(!doc || !doc.data) return false;
+  if(id==='novatex'){ var P=doc.data.prezzi; if(!P) return false; LISTINO=P; if(doc.data.soglia) LISTINO_TRUCK_SOGLIA=doc.data.soglia;
+    try{ calcListino(); }catch(e){} }
+  else { SID_LISTINO=doc.data; if(typeof slRender==='function') try{ slRender(); }catch(e){} }
+  return true;
+}
+function listiniLoad(offline){
+  if(!PROFILE) return;
+  var id=lisId(); if(id==='novatex' && !hasKit()) return;
+  var cached=lsGet(lisKey(id),null); if(cached) lisApply(id,cached);
+  if(offline) return;
+  B.getListino(id).then(function(doc){
+    if(doc && doc.data){ lisApply(id,doc); lsSet(lisKey(id),{ver:doc.ver,data:doc.data}); }
+  }).catch(function(){ /* senza rete resta la copia salvata */ });
+}
+function listiniWipe(){ try{ Object.keys(localStorage).forEach(function(k){ if(/^nvx_lis_/.test(k)) localStorage.removeItem(k); }); }catch(e){} LISTINO=null; SID_LISTINO=null; }
+onShowHooks.listino=(function(prev){ return function(){ if(prev) try{ prev(); }catch(e){} if(NVX_BRAND!=='sidagri') try{ calcListino(); }catch(e){} }; })(onShowHooks.listino);
 
 </script>
 <script>

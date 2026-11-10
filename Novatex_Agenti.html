@@ -3452,7 +3452,7 @@ window.NVX_I18N_PAT=window.NVX_I18N_PAT.concat([
 var FIREBASE_CONFIG = {"apiKey": "AIzaSyBTwyEhNCZmOiO33F1jmDXStaMYd8MVoeY", "authDomain": "novatex-agenti.firebaseapp.com", "projectId": "novatex-agenti", "storageBucket": "novatex-agenti.firebasestorage.app", "messagingSenderId": "26229274510", "appId": "1:26229274510:web:cf0dba302e5ddb2d9916df"};
 var FIREBASE_EMULATOR = null;
 /*__FIREBASE_END__*/
-var APP_VERSION = '2026.11-u11';
+var APP_VERSION = '2026.11-u12';
 if(window.NVXI18N) NVXI18N.init();
 
 var $ = function(id){ return document.getElementById(id); };
@@ -5138,7 +5138,8 @@ var NVXZPDF = (function(){
         dfont(t[0].length>11?14:16.5,'bold'); T(t[4]||C.white); doc.text(tx(t[0]),x+5,ky+10.6);
         font(7.6); T(C.mute); doc.text(cut(t[1],kw-9),x+5,ky+16.2);
         if(t[2]!==null) delta(x+5,ky+23,t[2],8.2,false);
-        else { font(8,'bold'); T(t[3][1]); doc.text(cut(t[3][0],kw-9),x+5,ky+23); }
+        else if(t[3]){ font(8,'bold'); T(t[3][1]); doc.text(cut(t[3][0],kw-9),x+5,ky+23); }
+        else { font(7.6); T(C.faint); doc.text(cut('nessun dato '+yp,kw-9),x+5,ky+23); }
       });
       onHero=false; y=ky+kh+7;
       /* fatturato per anno: barre sobrie (anni passati in contorno, anno in corso pieno) */

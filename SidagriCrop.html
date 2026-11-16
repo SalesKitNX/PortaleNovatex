@@ -3545,7 +3545,7 @@ var NVX_BADGE_BUILD = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAsYAAAEECAY
 var FIREBASE_CONFIG = {"apiKey": "AIzaSyBTwyEhNCZmOiO33F1jmDXStaMYd8MVoeY", "authDomain": "novatex-agenti.firebaseapp.com", "projectId": "novatex-agenti", "storageBucket": "novatex-agenti.firebasestorage.app", "messagingSenderId": "26229274510", "appId": "1:26229274510:web:cf0dba302e5ddb2d9916df"};
 var FIREBASE_EMULATOR = null;
 /*__FIREBASE_END__*/
-var APP_VERSION = '2026.10-u10';
+var APP_VERSION = '2026.11-u13';
 if(window.NVXI18N) NVXI18N.init();
 
 var $ = function(id){ return document.getElementById(id); };
@@ -5231,7 +5231,8 @@ var NVXZPDF = (function(){
         dfont(t[0].length>11?14:16.5,'bold'); T(t[4]||C.white); doc.text(tx(t[0]),x+5,ky+10.6);
         font(7.6); T(C.mute); doc.text(cut(t[1],kw-9),x+5,ky+16.2);
         if(t[2]!==null) delta(x+5,ky+23,t[2],8.2,false);
-        else { font(8,'bold'); T(t[3][1]); doc.text(cut(t[3][0],kw-9),x+5,ky+23); }
+        else if(t[3]){ font(8,'bold'); T(t[3][1]); doc.text(cut(t[3][0],kw-9),x+5,ky+23); }
+        else { font(7.6); T(C.faint); doc.text(cut('nessun dato '+yp,kw-9),x+5,ky+23); }
       });
       onHero=false; y=ky+kh+7;
       /* fatturato per anno: barre sobrie (anni passati in contorno, anno in corso pieno) */
@@ -5261,22 +5262,26 @@ var NVXZPDF = (function(){
         font(6.6); T(C.faint); doc.text(Math.round(p.v/tot*100)+'%',sx+sw,ly+3.6,{align:'right'}); });
       y=ry+rh+6;
       /* prodotti: anno di riferimento contro anno prima, fatturato e quantità */
-      var cks=Object.keys(A0.cats).sort(function(x,z){ return ((A0.cats[z][yr]||[0])[0])-((A0.cats[x][yr]||[0])[0]); });
+      var CNA={NETWRAP:'Rete',OTHER_FG:'Cover',OTHER_FILMS:'NRF',STRETCHFILM:'Stretchfilm',TWINE:'Spago'}, ckA=function(x){ return String(x||'').toUpperCase().trim().replace(/[\s-]+/g,'_'); };
+      var cks=Object.keys(A0.cats).filter(function(c){ return k!=='agri' || !Object.keys(A0.cats).some(function(z){ return CNA[ckA(z)]; }) || CNA[ckA(c)]; })
+        .sort(function(x,z){ return ((A0.cats[z][yr]||[0])[0])-((A0.cats[x][yr]||[0])[0]); });
+      var cnm=function(c){ return (k==='agri'&&CNA[ckA(c)])||c; };
       var tq={}; A0.yrs.forEach(function(z){ tq[z]=0; cks.forEach(function(c){ tq[z]+=((A0.cats[c][z]||[0,0])[1]); }); });
       var wsC=[IW-6*22,22,22,22,22,22,22];
       tableCard('Per prodotto: '+yr+' contro '+yp,'fatturato in euro e quantità',['Prodotto','€ '+yp,'€ '+yr,'Var.','Quantità '+yp,'Quantità '+yr,'Var.'],wsC,
         cks.map(function(c){ var v=A0.cats[c], d={}; d[3]=pc((v[yr]||[0])[0],(v[yp]||[0])[0]); d[6]=pc((v[yr]||[0,0])[1],(v[yp]||[0,0])[1]);
-          return {cells:[c,nn((v[yp]||[0])[0]),nn((v[yr]||[0])[0]),'',nn((v[yp]||[0,0])[1]),nn((v[yr]||[0,0])[1]),''],d:d,b:2}; })
+          return {cells:[cnm(c),nn((v[yp]||[0])[0]),nn((v[yr]||[0])[0]),'',nn((v[yp]||[0,0])[1]),nn((v[yr]||[0,0])[1]),''],d:d,b:2}; })
         .concat([{tot:1,cells:['Totale',nn(b.r),nn(a.r),'',nn(tq[yp]),nn(tq[yr]),''],d:(function(){ var d={}; d[3]=pc(a.r,b.r); d[6]=pc(tq[yr],tq[yp]); return d; })()}]));
 
       /* ---------- resoconto clienti: quantità per prodotto, anno in corso contro i due anni prima (max 2 pagine) ---------- */
       var y3=[yr-2,yr-1,yr];
       /* colonne: le categorie del settore (anche se a zero), più quelle trovate nei dati; EvoVent e InnoVent sono la stessa linea */
-      var CAT_DEF={agri:[['NETWRAP','Rete'],['SPAGO','Spago'],['FILM INSILATO','Film stretch'],['COVER','Cover']],
+      /* Agricoltura: solo le cinque categorie del gestionale, con il nome commerciale (nov 2026) */
+      var CAT_DEF={agri:[['NETWRAP','Rete'],['OTHER_FG','Cover'],['OTHER_FILMS','NRF'],['STRETCHFILM','Stretchfilm'],['TWINE','Spago']],
                    ind:[['EVOVENT','EvoVent'],['PALLETNET','Rete pallet'],['NETFILM','Netfilm']]};
       var ALIAS={INNOVENT:'EVOVENT'}, ckey=function(x){ x=String(x||'').toUpperCase().trim(); return ALIAS[x]||x; };
       var catCols=(CAT_DEF[k]||[]).map(function(d){ return {k:d[0],l:d[1]}; });
-      Object.keys(A0.cats).forEach(function(c0){ var kk=ckey(c0); if(!catCols.some(function(cc){ return cc.k===kk; })) catCols.push({k:kk,l:c0.charAt(0)+c0.slice(1).toLowerCase()}); });
+      if(k!=='agri') Object.keys(A0.cats).forEach(function(c0){ var kk=ckey(c0); if(!catCols.some(function(cc){ return cc.k===kk; })) catCols.push({k:kk,l:c0.charAt(0)+c0.slice(1).toLowerCase()}); });
       var PAL=SID?['#FED100','#9ED7A6','#A8D8E8','#F2A65E','#C9B2E8','#7FD3D0']:['#8FD9B6','#E8C786','#9CCFE8','#C9B2E8','#7FD3D0','#C7D98F','#EFA095','#B9C6D3'];
       catCols.forEach(function(cc,i){ cc.col=PAL[i%PAL.length]; });
       var qOf=function(c,yy0,kk){ var pa=c.pa[yy0]; if(!pa||!pa.c) return 0; var t=0; Object.keys(pa.c).forEach(function(c0){ if(ckey(c0)===kk) t+=(pa.c[c0]||[0,0])[1]||0; }); return t; };
